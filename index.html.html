@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Generador de reportes de expedientes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#eceff3;--surf:#fff;--ink:#16202b;--mut:#5d6b7a;--line:#d5dce4;--acc:#1d4f7c;--acc-ink:#fff;--bar:#2f6da3;--warn:#a8590b;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10161d;--surf:#18212b;--ink:#e6ebf0;--mut:#93a1b0;--line:#2b3846;--acc:#6aa7da;--acc-ink:#0c1319;--bar:#5b97ca;--warn:#e0a15a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10161d;--surf:#18212b;--ink:#e6ebf0;--mut:#93a1b0;--line:#2b3846;--acc:#6aa7da;--acc-ink:#0c1319;--bar:#5b97ca;--warn:#e0a15a;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:20px 24px 8px}h1{font-size:22px;margin:0 0 2px;font-weight:600}header p{margin:0;color:var(--mut)}
+main{padding:12px 24px 40px;max-width:1400px;margin:0 auto}
+.drop{border:2px dashed var(--line);border-radius:10px;background:var(--surf);padding:36px 20px;text-align:center;cursor:pointer}
+.drop.over,.drop:hover{border-color:var(--acc)}.drop b{display:block;font-size:17px;margin-bottom:4px}.drop span{color:var(--mut)}
+.bar-top{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:14px}
+.bar-top .sp{flex:1}
+.grid{display:grid;grid-template-columns:minmax(300px,400px) 1fr;gap:16px;align-items:start}
+@media(max-width:860px){.grid{grid-template-columns:1fr}header,main{padding-left:14px;padding-right:14px}}
+.panel{background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:12px}
+.panel h2{font-size:15px;margin:0 0 2px;font-weight:600}.panel .hint{color:var(--mut);font-size:13px;margin:0 0 10px}
+.row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+select,input[type=text],input[type=date],input[type=number]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:0;flex:1 1 120px}
+select:focus,input:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--surf);color:var(--ink);border-radius:6px;padding:6px 12px}
+button.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc);font-weight:500}
+button.x{padding:6px 9px;color:var(--mut);flex:0 0 auto}button.add{border-style:dashed;color:var(--acc)}
+.res{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surf)}
+table{border-collapse:collapse;width:100%}th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:600;cursor:pointer;background:var(--bg);position:sticky;top:0}td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.tot td{font-weight:600;background:var(--bg)}
+.meta{color:var(--mut);font-size:13px;margin:0 0 8px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.bars{margin-top:12px}.b{display:grid;grid-template-columns:minmax(80px,220px) 1fr 70px;gap:8px;align-items:center;margin-bottom:4px;font-size:13px}
+.b i{display:block;height:14px;background:var(--bar);border-radius:3px}.b span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.b span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.chips{display:flex;gap:6px;flex-wrap:wrap}.chip{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.chip button{border:0;border-radius:0;padding:4px 10px;background:transparent}.chip button+button{color:var(--mut);padding:4px 8px}
+.warn{color:var(--warn)}.hide{display:none}
+tr.alt td{background:var(--bg)}
+.pick{flex:1 1 100%;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--bg)}.pick summary{cursor:pointer}.pick .opts{max-height:190px;overflow:auto;margin-top:6px}.pick label{display:flex;gap:6px;align-items:center;padding:2px 0}
+.ch text{fill:var(--mut);font-size:11px}.ch line{stroke:var(--line)}
+.leg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;margin-top:8px}.leg.col{flex-direction:column;flex:1 1 200px;margin:0}.leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+</style>
+</head>
+<body>
+<header><h1>Generador de reportes de expedientes</h1><p>Carga tu Excel o CSV, elige cómo agrupar y qué calcular. Los datos se quedan en tu navegador.</p></header>
+<main>
+<div id="start"><div class="panel"><h2>Google Sheets: CONTROL DE PAGOS MIDAGRI</h2><p class="hint" id="sync0">Conectando con tu hoja…</p><button class="pri" id="conn">Conectar y leer hoja CONTROL</button></div><label class="drop" id="drop"><b>Arrastra tu archivo aquí o haz clic para elegirlo</b><span>Excel (.xlsx, .xls) o CSV. Puedes descargarlo desde Google Sheets con Archivo → Descargar.</span><input id="file" type="file" accept=".xlsx,.xls,.csv" hidden></label></div>
+<div id="app" class="hide">
+ <div class="bar-top"><b id="fname"></b><select id="sheet" style="flex:0 1 200px"></select><span id="info" style="color:var(--mut)"></span><span id="sync" style="color:var(--mut)"></span><span class="sp"></span><button id="refresh">Actualizar ahora</button><button id="newf">Cargar otro archivo</button></div>
+ <div class="grid">
+  <div>
+   <div class="panel"><h2>Reportes predefinidos</h2><p class="hint">Elige el reporte y ajusta. Se arma solo y luego puedes seguir personalizándolo abajo.</p><div class="row"><select id="pr-t"><option value="0">Derivación y publicación (y por publicar)</option><option value="1">Órdenes y órdenes pendientes</option><option value="2">Atendidos y por atender</option></select></div><div class="row"><select id="pr-e"></select></div><div class="row"><select id="pr-f"></select><select id="pr-d"><option value="">Sin desglose por fecha</option><option value="dia">Desglosar por día</option><option value="sem">Desglosar por semana</option><option value="mes">Desglosar por mes</option></select></div><p class="hint" style="margin:0 0 4px">Rango de fechas del campo elegido (opcional): desde y hasta</p><div class="row"><input type="date" id="pr-a"><input type="date" id="pr-b"></div><div id="pr-xr" class="hide"><p class="hint" style="margin:0 0 4px">Cuenta como orden o atendido cuando este campo tiene valor:</p><div class="row"><select id="pr-x"></select></div></div><button class="pri" id="pr-go">Generar reporte</button></div>
+   <div class="panel"><h2>Verificar repetidos</h2><p class="hint">Revisa si un dato se repite y muestra las filas repetidas con su detalle.</p><div class="row"><button class="pri" id="dv-p">Proveedores repetidos</button><button class="pri" id="dv-e">Expedientes repetidos</button></div><div class="row"><select id="dv-o"></select></div></div>
+   <div class="panel"><h2>Agrupar por</h2><p class="hint">Una fila de resultado por cada valor, por ejemplo por persona asignada.</p><div id="gs"></div><button class="add" id="addg">+ Agregar agrupación</button></div>
+   <div class="panel"><h2>Calcular</h2><p class="hint">Contar, sumar, promediar o medir días entre dos fechas.</p><div id="ms"></div><button class="add" id="addm">+ Agregar cálculo</button></div>
+   <div class="panel"><h2>Filtrar</h2><p class="hint">Limita los expedientes incluidos, por ejemplo solo los que tienen orden.</p><div id="fs"></div><div class="row"><button class="add" id="addfl">+ Filtro por lista</button><button class="add" id="addfr">+ Rango de fechas</button><button class="add" id="addfd">+ Repetidos</button><button class="add" id="addf">+ Otro filtro</button></div></div>
+   <div class="panel"><h2>Reportes guardados</h2><div class="row"><input type="text" id="rname" placeholder="Nombre del reporte"><button class="pri" id="save">Guardar reporte</button></div><div class="chips" id="saved"></div></div>
+  </div>
+  <div>
+   <div class="panel hide" id="dres"></div>
+   <div class="panel" id="sum" style="margin-bottom:10px"></div><p class="meta" id="meta"></p>
+   <div class="res"><table id="tbl"></table></div>
+   <div class="row" style="margin-top:10px"><button class="pri" id="copy">Copiar resultados</button><span id="msg" class="meta" style="margin:0"></span></div>
+   <div class="panel" style="margin-top:12px"><h2>Gráfico</h2><div class="row" style="margin-top:8px"><select id="ctype"><option value="hbar">Barras horizontales</option><option value="vbar">Barras verticales</option><option value="line">Líneas</option><option value="pie">Dona</option><option value="stack">Barras apiladas (2 agrupaciones)</option></select><select id="cmet"></select><select id="ctop"><option value="10">Top 10</option><option value="15" selected>Top 15</option><option value="30">Top 30</option><option value="9999">Todos</option></select></div><div id="chart"></div></div>
+  </div>
+ </div>
+</div>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const S={wb:null,rows:[],cols:[],types:{},groups:[],metrics:[{fn:'count',col:'',col2:''}],filters:[],sort:null,last:null};
+const FN={count:'Contar filas',ne:'Contar con valor en',empty:'Contar vacíos en',distinct:'Contar únicos de',sum:'Sumar',avg:'Promedio de',min:'Mínimo de',max:'Máximo de',dias:'Promedio de días entre'};
+const OPS={dup:'se repite (más de una vez)',uniq:'no se repite (único)',in:'es uno de',between:'está entre',eq:'es igual a',ne:'es distinto de',cont:'contiene',lleno:'tiene valor',vacio:'está vacío',ge:'es mayor o igual a',le:'es menor o igual a'};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const fmt=v=>v instanceof Date?pad(v.getDate())+'/'+pad(v.getMonth()+1)+'/'+v.getFullYear():(typeof v==='number'?v.toLocaleString('es-PE',{maximumFractionDigits:2}):String(v));
+const isE=v=>v===''||v==null;
+
+function readFile(f){
+ $('#fname').textContent=f.name;S.live=false;$('#sheet').classList.remove('hide');const r=new FileReader();
+ r.onload=e=>{try{S.wb=XLSX.read(e.target.result,{type:/\.csv$/i.test(f.name)?'string':'array',cellDates:true});
+  $('#sheet').innerHTML=S.wb.SheetNames.map(n=>`<option>${esc(n)}</option>`).join('');
+  $('#start').classList.add('hide');$('#app').classList.remove('hide');S.groups=[];S.metrics=[{fn:'count',col:'',col2:''}];S.filters=[];useSheet(S.wb.SheetNames[0]);
+ }catch(err){alert('No se pudo leer el archivo: '+err.message)}};
+ /\.csv$/i.test(f.name)?r.readAsText(f):r.readAsArrayBuffer(f);
+}
+function toDate(v){
+ if(v instanceof Date){const x=new Date(v.getTime()+43200000);return new Date(x.getFullYear(),x.getMonth(),x.getDate())}
+ const m=typeof v==='string'&&v.trim().match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);return m?new Date(+m[3],+m[2]-1,+m[1]):null;
+}
+function useSheet(n){useAOA(XLSX.utils.sheet_to_json(S.wb.Sheets[n],{header:1,defval:'',raw:true}))}
+function useAOA(a){
+ let h=a.findIndex(r=>r.filter(c=>c!=='').length>=2);if(h<0)h=0;
+ const seen={};S.cols=(a[h]||[]).map((c,i)=>{let t=String(c).trim()||'Columna '+(i+1);if(seen[t]){seen[t]++;t+=' ('+seen[t]+')'}else seen[t]=1;return t});
+ S.rows=a.map((r,i)=>[r,i]).slice(h+1).filter(([r])=>r.some(c=>c!=='')).map(([r,fi])=>{const o={};Object.defineProperty(o,'__fila',{value:fi+1,enumerable:false});S.cols.forEach((c,i)=>o[c]=r[i]===undefined?'':(typeof r[i]==='string'?r[i].trim():r[i]));return o});
+ S.types={};
+ S.cols.forEach(c=>{const ne=S.rows.map(r=>r[c]).filter(v=>!isE(v));if(!ne.length){S.types[c]='texto';return}
+  const d=ne.map(toDate);
+  if(d.filter(Boolean).length/ne.length>=.8){S.types[c]='fecha';S.rows.forEach(r=>{r[c]=isE(r[c])?'':(toDate(r[c])||'')})}
+  else if(ne.every(v=>typeof v==='number'||/^S\/\.?\s*-?[\d,]*\.?\d+$/.test(String(v).trim()))){S.types[c]='numero';S.rows.forEach(r=>{const v=r[c];r[c]=isE(v)?'':typeof v==='number'?v:parseFloat(String(v).trim().replace(/^S\/\.?\s*/,'').replace(/,/g,''))})}else S.types[c]='texto'});
+ S.sort=null;for(const k in DM)delete DM[k];$('#info').textContent=S.rows.length.toLocaleString('es-PE')+' filas, '+S.cols.length+' columnas';
+ panels();run();loadSaved();fillPre();
+}
+const co=(sel,empty)=>(empty?'<option value="">Elegir campo…</option>':'')+S.cols.map(c=>`<option ${c===sel?'selected':''} value="${esc(c)}">${esc(c)}</option>`).join('');
+const so=(o,sel)=>Object.entries(o).map(([k,v])=>`<option value="${k}" ${k===sel?'selected':''}>${v}</option>`).join('');
+function panels(){
+ $('#gs').innerHTML=S.groups.map((g,i)=>`<div class="row" data-k="groups" data-i="${i}"><select data-f="col">${co(g.col,1)}</select>${S.types[g.col]==='fecha'?`<select data-f="part">${so({dia:'Fecha completa',sem:'Por semana',mes:'Por mes',anio:'Por año'},g.part)}</select>`:''}<button class="x" data-del>✕</button></div>`).join('');
+ $('#ms').innerHTML=S.metrics.map((m,i)=>`<div class="row" data-k="metrics" data-i="${i}"><select data-f="fn">${so(FN,m.fn)}</select>${m.fn!=='count'?`<select data-f="col">${co(m.col,1)}</select>`:''}${m.fn==='dias'?`<select data-f="col2">${co(m.col2,1)}</select>`:''}<button class="x" data-del>✕</button></div>`).join('');
+ $('#fs').innerHTML=S.filters.map((f,i)=>{const t=S.types[f.col];const nv=f.op==='lleno'||f.op==='vacio'||f.op==='in'||f.op==='dup'||f.op==='uniq';const it=t==='fecha'&&f.op!=='cont'?'date':(t==='numero'&&['ge','le','between'].includes(f.op)?'number':'text');
+  return `<div class="row" data-k="filters" data-i="${i}"><select data-f="col">${co(f.col,1)}</select><select data-f="op">${so(OPS,f.op)}</select>${f.op==='in'?pickHTML(f):''}${nv?'':`<input data-f="val" type="${it}" value="${esc(f.val)}">`}${f.op==='between'?`<input data-f="val2" type="${it}" value="${esc(f.val2||'')}">`:''}<button class="x" data-del>✕</button></div>`}).join('');
+}
+document.addEventListener('change',e=>{
+ const el=e.target,row=el.closest('[data-k]');
+ if(el.id==='inclv'){run();return}
+ if(el.id==='file'){if(el.files[0])readFile(el.files[0]);return}
+ if(el.id==='sheet'){S.groups=[];S.filters=[];S.metrics=[{fn:'count',col:'',col2:''}];useSheet(el.value);return}
+ if(el.id==='ctype'||el.id==='cmet'||el.id==='ctop'){drawChart();return}
+ if(el.id==='dv-o'){if(el.value)checkDup(el.value);return}
+ if(el.id&&el.id.startsWith('pr-')){if(el.id==='pr-t')preVis();buildPre();return}
+ if(row&&el.dataset.opt!==undefined){const f=S.filters[+row.dataset.i];f.sel=f.sel||[];if(el.checked){if(!f.sel.includes(el.value))f.sel.push(el.value)}else f.sel=f.sel.filter(x=>x!==el.value);pickSum(row,f);run();return}
+ if(!row||!el.dataset.f)return;
+ const o=S[row.dataset.k][+row.dataset.i];o[el.dataset.f]=el.value;
+ if(el.dataset.f==='col'&&row.dataset.k==='filters'){o.val='';o.val2='';o.sel=[]}
+ if(row.dataset.k==='metrics')delete o.lbl;
+ panels();run();
+});
+document.addEventListener('click',e=>{
+ const t=e.target,row=t.closest('[data-k]');
+ if(t.dataset.del!==undefined&&row){S[row.dataset.k].splice(+row.dataset.i,1);panels();run();return}
+ if(t.id==='addg'){S.groups.push({col:'',part:'dia'});panels()}
+ if(t.id==='addm'){S.metrics.push({fn:'sum',col:'',col2:''});panels()}
+ if(t.id==='addf'){S.filters.push({col:'',op:'lleno',val:'',val2:'',sel:[]});panels()}
+ if(t.id==='addfl'){S.filters.push({col:gc(/ESPECIALISTA/)||'',op:'in',val:'',val2:'',sel:[]});panels()}
+ if(t.id==='addfd'){S.filters.push({col:gc(/PROVEEDOR/)||gc(/EXPEDIENTE/)||'',op:'dup',val:'',val2:'',sel:[]});panels()}
+ if(t.id==='pr-go')buildPre();
+ if(t.id==='dv-p')checkDup(gc(/PROVEEDOR/));
+ if(t.id==='dv-e')checkDup(gc(/^EXPEDIENTE/)||gc(/EXPEDIENTE/));
+ if(t.id==='dup-x')$('#dres').classList.add('hide');
+ if(t.id==='dup-copy'&&S.dup)copyTxt([S.dup.head,...S.dup.rows].map(r=>r.join('\t')).join('\n'),'Detalle copiado. Pégalo en Excel o Google Sheets.');
+ if(t.id==='dup-apply'&&S.dup){S.filters.push({col:S.dup.col,op:'dup',val:'',val2:'',sel:[]});panels();run()}
+ if(t.id==='addfr'){S.filters.push({col:gc(/DERIVACION/,'fecha')||gc(/./,'fecha')||'',op:'between',val:'',val2:'',sel:[]});panels()}
+ if(t.dataset.all!==undefined&&row){const f=S.filters[+row.dataset.i];f.sel=dv(f.col);row.querySelectorAll('[data-opt]').forEach(c=>c.checked=true);pickSum(row,f);run()}
+ if(t.dataset.none!==undefined&&row){const f=S.filters[+row.dataset.i];f.sel=[];row.querySelectorAll('[data-opt]').forEach(c=>c.checked=false);pickSum(row,f);run()}
+ if(t.id==='newf'){$('#app').classList.add('hide');$('#start').classList.remove('hide');$('#file').value=''}
+ if(t.id==='save')saveRep();
+ if(t.id==='refresh'||t.id==='conn')syncSheet();
+ const bi=t.closest('[data-bi]');if(bi)applyBuiltin(+bi.dataset.bi);
+ if(t.id==='copy')copyRes();
+ if(t.closest('th')&&t.closest('th').dataset.c!==undefined){const c=+t.closest('th').dataset.c;S.sort=S.sort&&S.sort.c===c?{c,d:-S.sort.d}:{c,d:1};run()}
+ const ch=t.closest('[data-load]');if(ch)applyRep(+ch.dataset.load);
+ const dl=t.closest('[data-rm]');if(dl)rmRep(+dl.dataset.rm);
+});
+const dz=$('#drop');
+['dragover','dragenter'].forEach(v=>dz.addEventListener(v,e=>{e.preventDefault();dz.classList.add('over')}));
+['dragleave','drop'].forEach(v=>dz.addEventListener(v,e=>{e.preventDefault();dz.classList.remove('over')}));
+dz.addEventListener('drop',e=>{if(e.dataTransfer.files[0])readFile(e.dataTransfer.files[0])});
+
+function passes(r,f){
+ if(!f.col)return true;const v=r[f.col],e=isE(v);
+ if(f.op==='vacio')return e;if(f.op==='lleno')return !e;
+ if(f.op==='in'){if(!f.sel||!f.sel.length)return true;return e?f.sel.includes('(vacío)'):f.sel.includes(fmt(v))}
+ if(f.op==='dup'||f.op==='uniq'){if(e)return false;const c=dupMap(f.col).get(nrm(v))||0;return f.op==='dup'?c>1:c<=1}
+ if(f.op==='between'){if(e)return false;const tt=S.types[f.col],cv=x=>tt==='fecha'?new Date(x+'T00:00').getTime():Number(x),a=tt==='fecha'?v.getTime():Number(v);if(f.val&&a<cv(f.val))return false;if(f.val2&&a>cv(f.val2))return false;return true}
+ const s=e?'':fmt(v).toLowerCase(),q=f.val.toLowerCase();
+ if(f.op==='eq')return s===q||(S.types[f.col]==='fecha'&&f.val&&!e&&v.getTime()===new Date(f.val+'T00:00').getTime());
+ if(f.op==='ne')return !(s===q);
+ if(f.op==='cont')return s.includes(q);
+ if(e||f.val==='')return false;
+ const t=S.types[f.col],a=t==='fecha'?v.getTime():Number(v),b=t==='fecha'?new Date(f.val+'T00:00').getTime():Number(f.val);
+ return f.op==='ge'?a>=b:a<=b;
+}
+function gkey(r,g){const v=r[g.col];if(isE(v))return '(vacío)';if(S.types[g.col]!=='fecha')return fmt(v);
+ if(g.part==='sem'){const d=new Date(v);d.setDate(d.getDate()-((d.getDay()+6)%7));return 'Sem. '+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+ if(g.part==='mes')return v.getFullYear()+'-'+pad(v.getMonth()+1);if(g.part==='anio')return String(v.getFullYear());return fmt(v)}
+function mlabel(m){return m.lbl?m.lbl:m.fn==='count'?'Filas':m.fn==='dias'?`Días promedio: ${m.col||'?'} → ${m.col2||'?'}`:`${FN[m.fn]} ${m.col||'?'}`}
+function calc(m,rs){
+ const ne=rs.map(r=>r[m.col]).filter(v=>!isE(v));
+ switch(m.fn){
+  case'count':return rs.length;case'ne':return ne.length;case'empty':return rs.length-ne.length;
+  case'distinct':return new Set(ne.map(fmt)).size;
+  case'sum':return ne.reduce((a,v)=>a+(Number(v)||0),0);
+  case'avg':{const n=ne.map(Number).filter(x=>!isNaN(x));return n.length?n.reduce((a,b)=>a+b,0)/n.length:''}
+  case'min':case'max':{if(!ne.length)return'';const isD=ne[0] instanceof Date;const n=ne.map(v=>isD?v.getTime():Number(v)).filter(x=>!isNaN(x));if(!n.length)return'';const r=Math[m.fn](...n);return isD?new Date(r):r}
+  case'dias':{const d=rs.filter(r=>r[m.col] instanceof Date&&r[m.col2] instanceof Date).map(r=>(r[m.col2]-r[m.col])/864e5);return d.length?d.reduce((a,b)=>a+b,0)/d.length:''}
+ }
+}
+function run(){
+ const ms=S.metrics.filter(m=>m.fn==='count'||m.col&&(m.fn!=='dias'||m.col2)),gs=S.groups.filter(g=>g.col);
+ const incl=false;const rs=S.rows.filter(r=>S.filters.every(f=>passes(r,f))&&(incl||gs.every(g=>!isE(r[g.col])||wantsEmpty(g.col))));
+ const map=new Map();rs.forEach(r=>{const k=gs.map(g=>gkey(r,g));const id=k.join('\u0001');if(!map.has(id))map.set(id,{k,r:[]});map.get(id).r.push(r)});
+ let out=[...map.values()].map(g=>[...g.k,...ms.map(m=>calc(m,g.r))]);
+ if(!gs.length)out=[['Total',...ms.map(m=>calc(m,rs))]].map(r=>r);
+ const head=gs.length?[...gs.map(g=>g.col+(S.types[g.col]==='fecha'&&g.part!=='dia'?' ('+g.part+')':'')),...ms.map(mlabel)]:['',...ms.map(mlabel)];
+ const nk=Math.max(gs.length,1);
+ if(S.sort&&S.sort.c<head.length){const c=S.sort.c,d=S.sort.d;out.sort((a,b)=>{const x=a[c],y=b[c];const nx=typeof x==='number'||x instanceof Date,ny=typeof y==='number'||y instanceof Date;
+  if(nx&&ny)return (+x-+y)*d;return String(fmt(x)).localeCompare(String(fmt(y)),'es',{numeric:true})*d})}
+ else if(gs.length&&ms.length)out.sort((a,b)=>(typeof b[nk]==='number'?b[nk]:0)-(typeof a[nk]==='number'?a[nk]:0));
+ const tot=gs.length&&ms.length?[ 'Total general',...Array(nk-1).fill(''),...ms.map(m=>m.fn==='count'||m.fn==='ne'||m.fn==='empty'||m.fn==='sum'||m.fn==='distinct'||m.fn==='avg'||m.fn==='dias'||m.fn==='min'||m.fn==='max'?calc(m,rs):'')]:null;
+ S.last={head,out,tot,nk};
+ $('#meta').innerHTML=`<span>${rs.length.toLocaleString('es-PE')} expedientes con datos</span>`+(S.metrics.length!==ms.length?'<span class="warn">Completa los campos de los cálculos vacíos</span>':'');
+ $('#tbl').innerHTML='<thead><tr>'+head.map((h,i)=>`<th data-c="${i}" class="${i>=nk?'n':''}">${esc(h)}${S.sort&&S.sort.c===i?(S.sort.d>0?' ▲':' ▼'):''}</th>`).join('')+'</tr></thead><tbody>'+
+  out.map(r=>'<tr>'+r.map((v,i)=>`<td class="${i>=nk?'n':''}">${esc(isE(v)?'—':fmt(v))}</td>`).join('')+'</tr>').join('')+
+  (tot?'<tr class="tot">'+tot.map((v,i)=>`<td class="${i>=nk?'n':''}">${esc(isE(v)?'':fmt(v))}</td>`).join('')+'</tr>':'')+'</tbody>';
+ fillMet();drawChart();$('#sum').innerHTML=sumHTML(rs,gs,ms,incl);
+}
+function copyRes(){
+ if(!S.last)return;const rows=[...(S.sum||[]).map(([a,b])=>[a+': '+b]),[''],S.last.head,...S.last.out,...(S.last.tot?[S.last.tot]:[])].map(r=>r.map(v=>isE(v)?'':fmt(v)).join('\t')).join('\n');
+ const ta=document.createElement('textarea');ta.value=rows;document.body.appendChild(ta);ta.select();
+ let ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();
+ if(!ok&&navigator.clipboard)navigator.clipboard.writeText(rows).then(()=>ok=1,()=>{});
+ $('#msg').textContent='Copiado. Pégalo en Excel o Google Sheets.';setTimeout(()=>$('#msg').textContent='',4000);
+}
+function reps(){try{return JSON.parse(localStorage.getItem('reportes_exp')||'[]')}catch(e){return[]}}
+function setReps(a){try{localStorage.setItem('reportes_exp',JSON.stringify(a))}catch(e){}}
+function loadSaved(){const a=reps();const B=BUILTIN.map((r,i)=>`<span class="chip"><button data-bi="${i}">${esc(r.name)}</button></span>`).join('');$('#saved').innerHTML=B+(a.length?a.map((r,i)=>`<span class="chip"><button data-load="${i}">${esc(r.name)}</button><button data-rm="${i}" aria-label="Eliminar">✕</button></span>`).join(''):'')}
+function saveRep(){const n=$('#rname').value.trim();if(!n){$('#rname').focus();return}
+ const a=reps().filter(r=>r.name!==n);a.push({name:n,groups:S.groups,metrics:S.metrics,filters:S.filters});setReps(a);$('#rname').value='';loadSaved()}
+function applyRep(i){const r=reps()[i];if(!r)return;const ok=c=>!c||S.cols.includes(c);
+ S.groups=r.groups.filter(g=>ok(g.col));S.metrics=r.metrics.filter(m=>ok(m.col)&&ok(m.col2));S.filters=r.filters.filter(f=>ok(f.col));
+ if(!S.metrics.length)S.metrics=[{fn:'count',col:'',col2:''}];S.sort=null;panels();run()}
+function rmRep(i){const a=reps();a.splice(i,1);setReps(a);loadSaved()}
+const gc=(re,t)=>S.cols.find(c=>re.test(c)&&(!t||S.types[c]===t));
+function dv(c){const s=new Set();let ev=false;S.rows.forEach(r=>{const v=r[c];if(isE(v))ev=true;else s.add(fmt(v))});const a=[...s].sort((a,b)=>a.localeCompare(b,'es',{numeric:true})).slice(0,500);return ev?['(vacío)',...a]:a}
+const wantsEmpty=c=>S.filters.some(f=>f.col===c&&(f.op==='vacio'||(f.op==='in'&&f.sel&&f.sel.includes('(vacío)'))));
+const pickTxt=f=>f.sel&&f.sel.length?f.sel.length+' seleccionados':'Elegir valores (sin elegir = todos)';
+function pickSum(row,f){row.querySelector('summary').textContent=pickTxt(f)}
+function pickHTML(f){const v=f.col?dv(f.col):[];f.sel=f.sel||[];return `<details class="pick"><summary>${pickTxt(f)}</summary><div class="row" style="margin:6px 0 0"><button data-all>Todos</button><button data-none>Ninguno</button></div><div class="opts">${v.map(x=>`<label><input type="checkbox" data-opt value="${esc(x)}" ${f.sel.includes(x)?'checked':''}>${esc(x)}</label>`).join('')}</div></details>`}
+const PAL=['#2f6da3','#d9822b','#3a9d7a','#b5495b','#7a64b8','#c2a21f','#4aa3b8','#8a8f98','#9c5a2e'];
+const nice=x=>{const p=10**Math.floor(Math.log10(x||1)),n=x/p;return(n<=1?1:n<=2?2:n<=5?5:10)*p};
+const fm=v=>v.toLocaleString('es-PE',{maximumFractionDigits:1});
+const cut=(s,n)=>s.length>n?s.slice(0,n-1)+'…':s;
+const sk=s=>{const m=/^(\d\d)\/(\d\d)\/(\d{4})$/.exec(s);return m?m[3]+m[2]+m[1]:s};
+function fillMet(){const s=$('#cmet'),p=s.value,h=S.last.head.slice(S.last.nk);s.innerHTML=h.map((x,i)=>`<option value="${i}">${esc(x)}</option>`).join('');if(+p<h.length)s.value=p}
+function axesY(mx,l,t,w,h){const st=nice(mx/4),tp=st*Math.ceil(mx/st);let s='';for(let v=0;v<=tp+1e-9;v+=st){const y=t+h-v/tp*h;s+=`<line x1="${l}" x2="${l+w}" y1="${y}" y2="${y}"/><text x="${l-6}" y="${y+4}" text-anchor="end">${fm(v)}</text>`}return{s,tp}}
+function xlab(txt,cx,y,i,n){return n>40&&i%Math.ceil(n/40)?'':`<text transform="rotate(-40 ${cx} ${y})" x="${cx}" y="${y}" text-anchor="end">${esc(cut(txt,20))}</text>`}
+function legend(items,col){return `<div class="leg${col?' col':''}">`+items.map(([n,c])=>`<span><i style="background:${c}"></i>${esc(cut(n,40))}</span>`).join('')+'</div>'}
+function drawChart(){
+ const L=S.last,el=$('#chart'),nk=L.nk,ng=S.groups.filter(g=>g.col).length;
+ if(!ng||L.head.length<=nk){el.innerHTML='<p class="meta">Agrupa por un campo y agrega un cálculo para ver el gráfico.</p>';return}
+ const ci=nk+(+$('#cmet').value||0),top=+$('#ctop').value;let type=$('#ctype').value,note='';
+ const rows=L.out.filter(r=>typeof r[ci]==='number');
+ if(!rows.length){el.innerHTML='<p class="meta">No hay valores numéricos para graficar.</p>';return}
+ if(type==='stack'&&nk<2){type='vbar';note='<p class="meta">Agrega una segunda agrupación para apilar. Se muestra en barras verticales.</p>'}
+ const lab=r=>r.slice(0,nk).join(' / '),W=640,H=320,l=48,t=10,w=W-l-10,h=H-t-80;
+ const dOrd=/^\d\d\/\d\d\/\d{4}$|^\d{4}(-\d\d)?$|^Sem\./.test(String(rows[0][0]))&&['line','vbar','stack'].includes(type);
+ const pick=a=>dOrd?a.slice().sort((x,y)=>sk(String(x[0])).localeCompare(sk(String(y[0])))).slice(-top):a.slice().sort((x,y)=>y[ci]-x[ci]).slice(0,top);
+ const svg=b=>`<svg class="ch" viewBox="0 0 ${W} ${H}" width="100%">${b}</svg>`;let out='';
+ if(type==='hbar'){const d=pick(rows),mx=Math.max(...d.map(r=>r[ci]),1e-9);out=d.map(r=>`<div class="b"><span title="${esc(lab(r))}">${esc(lab(r))}</span><i style="width:${Math.max(r[ci]/mx*100,1)}%"></i><span>${esc(fmt(r[ci]))}</span></div>`).join('')}
+ else if(type==='vbar'||type==='line'){const d=pick(rows),n=d.length,mx=Math.max(...d.map(r=>r[ci]),0)||1,{s,tp}=axesY(mx,l,t,w,h),bw=w/n;let g='';
+  if(type==='vbar')g=d.map((r,i)=>{const bh=Math.max(r[ci],0)/tp*h;return `<rect x="${l+i*bw+bw*.15}" y="${t+h-bh}" width="${bw*.7}" height="${bh}" fill="${PAL[0]}"><title>${esc(lab(r))}: ${esc(fmt(r[ci]))}</title></rect>`}).join('');
+  else{const pts=d.map((r,i)=>[l+i*bw+bw/2,t+h-Math.max(r[ci],0)/tp*h]);g=`<polyline fill="none" stroke="${PAL[0]}" stroke-width="2" points="${pts.map(p=>p.join(',')).join(' ')}"/>`+pts.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="${PAL[0]}"><title>${esc(lab(d[i]))}: ${esc(fmt(d[i][ci]))}</title></circle>`).join('')}
+  out=svg(s+g+d.map((r,i)=>xlab(lab(r),l+i*bw+bw/2,t+h+12,i,n)).join(''))}
+ else if(type==='pie'){const d=pick(rows.filter(r=>r[ci]>0));if(!d.length){el.innerHTML='<p class="meta">No hay valores positivos para la dona.</p>';return}
+  const sl=d.slice(0,9).map(r=>[lab(r),r[ci]]);const rest=rows.filter(r=>r[ci]>0).sort((x,y)=>y[ci]-x[ci]).slice(9).reduce((a,r)=>a+r[ci],0);if(rest>0)sl.push(['Otros',rest]);
+  const tot=sl.reduce((a,x)=>a+x[1],0),cx=130,cy=130,R=120,r0=68;let a0=0;const P=(r,a)=>[cx+r*Math.sin(a),cy-r*Math.cos(a)];
+  const paths=sl.map((x,i)=>{const a1=a0+Math.min(x[1]/tot*2*Math.PI,2*Math.PI-1e-4),[x0,y0]=P(R,a0),[x1,y1]=P(R,a1),[x2,y2]=P(r0,a1),[x3,y3]=P(r0,a0),lg=a1-a0>Math.PI?1:0;a0=a1;return `<path d="M${x0} ${y0}A${R} ${R} 0 ${lg} 1 ${x1} ${y1}L${x2} ${y2}A${r0} ${r0} 0 ${lg} 0 ${x3} ${y3}Z" fill="${PAL[i%PAL.length]}"><title>${esc(x[0])}: ${esc(fmt(x[1]))} (${(x[1]/tot*100).toFixed(1)}%)</title></path>`}).join('');
+  out=`<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center"><svg class="ch" viewBox="0 0 260 260" width="260" height="260">${paths}<text x="130" y="136" text-anchor="middle" style="font-size:18px;fill:var(--ink)">${esc(fm(tot))}</text></svg>${legend(sl.map((x,i)=>[x[0]+' ('+(x[1]/tot*100).toFixed(1)+'%)',PAL[i%PAL.length]]),1)}</div>`}
+ else{const xs=new Map(),ss=new Map();rows.forEach(r=>{const x=String(r[0]),s=r.slice(1,nk).join(' / ');if(!xs.has(x))xs.set(x,new Map());xs.get(x).set(s,(xs.get(x).get(s)||0)+r[ci]);ss.set(s,(ss.get(s)||0)+r[ci])});
+  const keep=[...ss.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]).slice(0,8),hasO=ss.size>8;
+  let xl=[...xs.entries()].map(([x,m])=>({x,m,tot:[...m.values()].reduce((a,b)=>a+b,0)}));
+  xl=dOrd?xl.sort((a,b)=>sk(a.x).localeCompare(sk(b.x))).slice(-top):xl.sort((a,b)=>b.tot-a.tot).slice(0,top);
+  const n=xl.length,mx=Math.max(...xl.map(o=>o.tot),0)||1,{s,tp}=axesY(mx,l,t,w,h),bw=w/n,col=k=>PAL[keep.indexOf(k)<0?8:keep.indexOf(k)];let g='';
+  xl.forEach((o,i)=>{let y=t+h;const segs=keep.map(k=>[k,o.m.get(k)||0]);if(hasO)segs.push(['Otros',[...o.m.entries()].filter(e=>!keep.includes(e[0])).reduce((a,e)=>a+e[1],0)]);segs.forEach(([k,v])=>{if(v<=0)return;const bh=v/tp*h;y-=bh;g+=`<rect x="${l+i*bw+bw*.15}" y="${y}" width="${bw*.7}" height="${bh}" fill="${col(k)}"><title>${esc(o.x)} · ${esc(k)}: ${esc(fmt(v))}</title></rect>`})});
+  out=svg(s+g+xl.map((o,i)=>xlab(o.x,l+i*bw+bw/2,t+h+12,i,n)).join(''))+legend([...keep,...(hasO?['Otros']:[])].map(k=>[k,col(k)]))}
+ el.innerHTML=note+`<p class="meta">${esc(L.head[ci])}</p>`+out;
+}
+const PN={dia:'fecha completa',sem:'por semana',mes:'por mes',anio:'por año'};
+const fd=(c,x)=>S.types[c]==='fecha'&&/^\d{4}-\d\d-\d\d$/.test(x)?x.split('-').reverse().join('/'):x;
+function fdesc(f){const o=OPS[f.op]||'';
+ if(['lleno','vacio','dup','uniq'].includes(f.op))return `${f.col} ${o}`;
+ if(f.op==='in')return `${f.col} es uno de: ${f.sel.join(', ')}`;
+ if(f.op==='between')return `${f.col} entre ${f.val?fd(f.col,f.val):'(sin límite)'} y ${f.val2?fd(f.col,f.val2):'(sin límite)'}`;
+ return `${f.col} ${o} ${fd(f.col,f.val)}`}
+function sumHTML(rs,gs,ms,incl){
+ const fs=S.filters.filter(f=>f.col&&!(f.op==='in'&&!(f.sel&&f.sel.length)));
+ S.sum=[['Fuente',S.live?'Google Sheets, hoja '+SRC.tab:$('#fname').textContent],
+  ['Agrupado por',gs.length?gs.map(g=>g.col+(S.types[g.col]==='fecha'?' ('+PN[g.part||'dia']+')':'')).join(', '):'sin agrupación (total general)'],
+  ['Cálculos',ms.length?ms.map(mlabel).join(' | '):'ninguno'],
+  ['Filtros activos',fs.length?fs.map(fdesc).join(' | '):'ninguno'],
+  ['Valores vacíos en la agrupación',gs.length?(incl?'incluidos':'excluidos'):'no aplica'],
+  ['Expedientes considerados',rs.length.toLocaleString('es-PE')]];
+ return '<h2>Resumen del reporte</h2>'+S.sum.map(([a,b])=>`<p class="meta" style="display:block;margin:4px 0 0"><b>${esc(a)}:</b> ${esc(b)}</p>`).join('')}
+const DM={},nrm=v=>fmt(v).trim().toUpperCase();
+function dupMap(c){if(!DM[c]){const m=new Map();S.rows.forEach(r=>{const v=r[c];if(!isE(v)){const k=nrm(v);m.set(k,(m.get(k)||0)+1)}});DM[c]=m}return DM[c]}
+function preVis(){$('#pr-xr').classList.toggle('hide',+$('#pr-t').value===0)}
+function fillPre(){
+ const esp=gc(/^ESPECIALISTA/),opt=x=>`<option value="${esc(x)}">${esc(x)}</option>`;
+ const keep=(id,html,def)=>{const s=$(id),p=s.value;s.innerHTML=html;if(p&&[...s.options].some(o=>o.value===p))s.value=p;else if(def&&[...s.options].some(o=>o.value===def))s.value=def};
+ keep('#pr-e','<option value="*">Cada especialista (desglosado)</option><option value="ALL">Todos agrupados (un solo total)</option>'+(esp?dv(esp).filter(x=>x!=='(vacío)').map(opt).join(''):''));
+ keep('#pr-f',S.cols.filter(c=>S.types[c]==='fecha').map(opt).join(''),gc(/DERIVACION/,'fecha'));
+ keep('#pr-x',S.cols.map(opt).join(''),gc(/^OS$/)||gc(/FECHA DE LA OS/));
+ preVis();
+ $('#dv-o').innerHTML='<option value="">Otro campo…</option>'+S.cols.map(opt).join('');
+ if(S.dup&&!$('#dres').classList.contains('hide'))checkDup(S.dup.col);
+}
+function buildPre(){
+ const type=+$('#pr-t').value,esp=gc(/^ESPECIALISTA/),ev=$('#pr-e').value,dc=$('#pr-f').value,desg=$('#pr-d').value,xc=$('#pr-x').value;
+ const pub=gc(/PUBLICACION/,'fecha'),der=gc(/DERIVACION/,'fecha'),fos=gc(/FECHA DE LA OS/,'fecha');
+ const G=[],F=[],M=[],m=(fn,col,lbl)=>({fn,col:col||'',col2:'',lbl});
+ if(esp&&ev==='*')G.push({col:esp,part:'dia'});
+ if(esp&&ev!=='*'&&ev!=='ALL')F.push({col:esp,op:'in',val:'',val2:'',sel:[ev]});
+ if(desg&&dc)G.push({col:dc,part:desg});
+ const a=$('#pr-a').value,b=$('#pr-b').value;
+ if(dc&&(a||b))F.push({col:dc,op:'between',val:a,val2:b,sel:[]});
+ if(type===0){M.push(m('count','','Total expedientes'));if(der)M.push(m('ne',der,'Con fecha de derivación'),m('min',der,'Primera derivación'),m('max',der,'Última derivación'));if(pub)M.push(m('ne',pub,'Publicados'),m('empty',pub,'Por publicar'),m('max',pub,'Última publicación'))}
+ else if(type===1){M.push(m('count','','Total expedientes'));if(xc)M.push(m('ne',xc,'Órdenes emitidas'),m('empty',xc,'Órdenes pendientes'));if(fos)M.push(m('min',fos,'Primera fecha de orden'),m('max',fos,'Última fecha de orden'))}
+ else{M.push(m('count','','Expedientes que se tienen'));if(xc)M.push(m('ne',xc,'Atendidos'),m('empty',xc,'Por atender'))}
+ S.groups=G;S.metrics=M;S.filters=F;S.sort=null;panels();run();
+}
+function copyTxt(t,msg){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();if(!ok&&navigator.clipboard)navigator.clipboard.writeText(t).catch(()=>{});$('#msg').textContent=msg;setTimeout(()=>$('#msg').textContent='',4000)}
+const DUPCOLS=/EXPEDIENTE|PROVEEDOR|ESPECIALISTA|FECHA DE DERIVACION|^OS$|^ESTADO$|FECHA DE LA OS|^MONTO$/;
+function checkDup(col){
+ const box=$('#dres');box.classList.remove('hide');
+ if(!col){box.innerHTML='<h2>Verificación de repetidos</h2><p class="meta">No se encontró ese campo en la hoja.</p>';return}
+ const dm=dupMap(col),g=new Map();let withData=0;
+ S.rows.forEach(r=>{const v=r[col];if(isE(v))return;withData++;const k=nrm(v);if((dm.get(k)||0)>1){if(!g.has(k))g.set(k,[]);g.get(k).push(r)}});
+ const groups=[...g.entries()].sort((a,b)=>b[1].length-a[1].length||a[0].localeCompare(b[0],'es'));
+ const nrows=groups.reduce((a,x)=>a+x[1].length,0);
+ let dc=S.cols.filter(c=>c!==col&&DUPCOLS.test(c)).slice(0,6);if(!dc.length)dc=S.cols.filter(c=>c!==col).slice(0,5);
+ const head=['Fila','Veces',col,'Se repite en las filas',...dc],rows=[];
+ groups.forEach(([k,rs],gi)=>rs.forEach(r=>rows.push([r.__fila||'—',rs.length,fmt(r[col]),rs.map(x=>x.__fila).join(', '),...dc.map(c=>isE(r[c])?'—':fmt(r[c])),gi])));
+ S.dup={col,head,rows:rows.map(r=>r.slice(0,-1))};
+ const sm=groups.length?`<b>${esc(col)}</b>: ${groups.length} valores se repiten, en ${nrows} filas (de ${withData} con dato).`:`<b>${esc(col)}</b>: no hay valores repetidos entre las ${withData} filas con dato.`;
+ const show=rows.slice(0,500);
+ box.innerHTML='<h2>Verificación de repetidos</h2><p class="meta" style="display:block">'+sm+(rows.length>show.length?' Se muestran las primeras 500 filas; copia el detalle para verlas todas.':'')+'</p>'+
+  (groups.length?'<div class="res" style="max-height:380px;overflow:auto"><table><thead><tr>'+head.map((h,i)=>`<th class="${i<2?'n':''}">${esc(h)}</th>`).join('')+'</tr></thead><tbody>'+show.map(r=>`<tr class="${r[r.length-1]%2?'alt':''}">`+r.slice(0,-1).map((v,i)=>`<td class="${i<2?'n':''}">${esc(v)}</td>`).join('')+'</tr>').join('')+'</tbody></table></div><div class="row" style="margin-top:8px"><button id="dup-copy">Copiar detalle</button><button id="dup-apply">Aplicar como filtro en el reporte</button><button id="dup-x">Cerrar</button></div>':'<div class="row"><button id="dup-x">Cerrar</button></div>');
+}
+const C1={fn:'count',col:'',col2:''};
+const BUILTIN=[
+{name:'Expedientes por especialista',groups:[{col:'ESPECIALISTA',part:'dia'}],metrics:[C1],filters:[]},
+{name:'Con orden y sin orden',groups:[{col:'ESTADO PARA EL CUADRO',part:'dia'}],metrics:[C1],filters:[]},
+{name:'Con orden: días derivación a OS',groups:[{col:'ESPECIALISTA',part:'dia'}],metrics:[C1,{fn:'dias',col:'FECHA DE DERIVACION',col2:'FECHA DE LA OS'}],filters:[{col:'FECHA DE LA OS',op:'lleno',val:''}]},
+{name:'Derivaciones por fecha',groups:[{col:'FECHA DE DERIVACION',part:'dia'}],metrics:[C1],filters:[]},
+{name:'Monto por especialista',groups:[{col:'ESPECIALISTA',part:'dia'}],metrics:[C1,{fn:'sum',col:'MONTO',col2:''}],filters:[]}
+];
+function applyBuiltin(i){const r=JSON.parse(JSON.stringify(BUILTIN[i]));const ok=c=>!c||S.cols.includes(c);
+ S.groups=r.groups.filter(g=>ok(g.col));S.metrics=r.metrics.filter(m=>ok(m.col)&&ok(m.col2));S.filters=r.filters.filter(f=>ok(f.col));
+ if(!S.metrics.length)S.metrics=[{fn:'count',col:'',col2:''}];S.sort=null;panels();run()}
+const SRC={id:'1yz3VYiBAs9ShrI1IPkqr7-_pTOFCL_xVcY4u_z7jN0s',tab:'CONTROL',srv:'Google Sheets'};
+let MCP=null,busy=false;S.live=false;
+const say=t=>['#sync0','#sync'].forEach(s=>{const e=$(s);if(e)e.textContent=t});
+async function syncSheet(){
+ if(busy)return;busy=true;say('Leyendo Google Sheets…');
+ try{
+  if(typeof claude==='undefined'){say('La conexión con Google Sheets no está disponible en esta vista. Puedes cargar un archivo.');return}
+  MCP=MCP||await claude.use('mcp');
+  if(!MCP){say('La conexión con Google Sheets no está disponible en esta vista. Puedes cargar un archivo.');return}
+  const res=await MCP.callTool(SRC.srv,'get_values',{spreadsheetId:SRC.id,range:"'"+SRC.tab+"'!A1:Z5000"});
+  const vals=res&&res.payload&&res.payload.values;
+  if(!vals||!vals.length){say('La pestaña '+SRC.tab+' no devolvió datos.');return}
+  const first=!S.live;S.live=true;
+  if(first){S.groups=[{col:'ESPECIALISTA',part:'dia'}];S.metrics=[{fn:'count',col:'',col2:''}];S.filters=[];S.sort=null}
+  $('#fname').textContent='CONTROL DE PAGOS MIDAGRI · '+SRC.tab;$('#sheet').classList.add('hide');
+  $('#start').classList.add('hide');$('#app').classList.remove('hide');
+  useAOA(vals);
+  say('Actualizado '+new Date().toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})+'. Se refresca solo cada 5 minutos.');
+ }catch(e){
+  const m={needs_reauth:'Vuelve a conectar Google Sheets en Configuración → Conectores de claude.ai.',server_not_connected:'Agrega el conector Google Sheets en Configuración → Conectores de claude.ai.',selection_required:'Tienes más de una conexión de Google Sheets: elige una cuando claude.ai te lo pida.',not_in_manifest:'No está permitido que esta página lea Google Sheets. Pulsa Conectar para pedirlo de nuevo.',approval_required:'Falta tu aprobación para leer Google Sheets. Pulsa Conectar para aprobarla.',consent_required:'Falta tu aprobación para leer Google Sheets. Pulsa Conectar para aprobarla.',blocked_by_policy:'Tu organización bloquea esta lectura.',server_unavailable:'Google Sheets no respondió. Pulsa Actualizar ahora en un momento.',tool_error:'No se pudo leer la pestaña CONTROL: revisa que exista y que tengas acceso.'};
+  say(m[e&&e.code]||'No se pudo leer la hoja. Puedes cargar un archivo.');
+ }finally{busy=false}
+}
+setInterval(()=>{if(S.live&&!document.hidden)syncSheet()},300000);
+loadSaved();
+syncSheet();
+</script>
+</body>
+</html>
